@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>四季のルームモニター v2.3 + History</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-512.png">
+    <meta name="theme-color" content="#00d2ff">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* --- スタイル設定：完全維持 --- */
+        :root {
+            --accent-blue: #00d2ff;
+            --accent-red: #ff512f;
+            --accent-green: #a8e6cf;
+            --bg-glass: rgba(255, 255, 255, 0.12);
+            --season-grad: linear-gradient(-45deg, #0f2027, #2c5364, #203a43, #16222a);
+        }
+
+        body.spring { --season-grad: linear-gradient(-45deg, #feada6, #f5efef, #ff80a0, #ffc0cb); color: #4a4a4a; }
+        body.summer { --season-grad: linear-gradient(-45deg, #2193b0, #6dd5ed, #0083b0, #00b4db); }
+        body.autumn { --season-grad: linear-gradient(-45deg, #11998e, #38ef7d, #d35400, #e67e22); }
+        body.winter { --season-grad: linear-gradient(-45deg, #1e3c72, #2a5298, #000428, #004e92); }
+
+        body.spring h1, body.spring .stats-title { color: #d04a6e; border-bottom-color: #d04a6e; }
+        body.spring .label { border-left-color: #d04a6e; }
+
+        body { 
+            font-family: 'Noto Sans JP', sans-serif; 
+            text-align: center; 
+            background: var(--season-grad); 
+            background-size: 400% 400%; 
+            animation: gradientBG 15s ease infinite; 
+            margin: 0; padding: 10px 15px 100px 15px; 
+            color: #fff; min-height: 100vh; overflow-x: hidden; 
+            transition: background 2s ease;
+        }
+
+        #snow-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1; display: none;
+        }
+        .snowflake {
+            position: absolute; top: -10px; color: white; opacity: 0.8;
+            user-select: none; animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(110vh) rotate(360deg); }
+        }
+
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .container { max-width: 480px; margin: auto; position: relative; z-index: 2; }
+        .content-page { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s; }
+        .content-page.active { display: block; opacity: 1; transform: translateY(0); }
+        
+        h1 { font-size: 24px; margin: 15px 0; letter-spacing: 2px; border-bottom: 2px solid var(--accent-blue); display: inline-block; padding-bottom: 5px; }
+        .card { background: var(--bg-glass); border-radius: 24px; padding: 20px; margin-bottom: 15px; text-align: left; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 8px 32px rgba(0,0,0,0.4); backdrop-filter: blur(5px); }
+        .clock-card { text-align: center; background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.3)); }
+        .date-display { font-size: 20px; color: #fff; margin-bottom: 5px; font-weight: 700; font-family: 'Orbitron'; }
+        .time-display { font-size: 48px; font-weight: 700; font-family: 'Orbitron'; background: rgba(0,0,0,0.3); border-radius: 12px; display: block; padding: 8px 0; }
+        .stats-title { font-size: 14px; text-align: left; margin: 25px 0 10px 10px; color: var(--accent-blue); font-weight: 900; }
+        .stats-grid { display: flex; gap: 12px; margin-bottom: 12px; }
+        .stat-card { flex: 1; background: rgba(255,255,255,0.1); border-radius: 18px; padding: 22px 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .stat-label { font-size: 11px; opacity: 0.8; margin-bottom: 5px; font-weight: bold; }
+        .stat-val { font-size: 28px; font-weight: 700; font-family: 'Orbitron'; }
+        .m5-box { background: rgba(0,0,0,0.3); border-radius: 18px; padding: 20px; margin-top: 10px; border-left: 8px solid #ccc; text-align: left; }
+        .advice-status { font-size: 14px; display: block; margin-bottom: 10px; font-weight: 700; }
+        .level-indicator { display: flex; gap: 5px; margin-bottom: 15px; height: 10px; }
+        .level-step { flex: 1; background: rgba(255,255,255,0.1); border-radius: 5px; }
+        .advice-text { font-size: 15px; line-height: 1.6; font-weight: 700; }
+
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .history-table th, .history-table td { padding: 10px 5px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .history-table th { color: var(--accent-blue); font-size: 11px; font-weight: 900; }
+        .history-table td { font-family: 'Orbitron'; }
+
+        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(15px); display: flex; padding: 12px 0 25px 0; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+        .tab-item { color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; text-align: center; flex: 1; font-weight: 700; }
+        .tab-item.active { color: #fff; text-shadow: 0 0 10px var(--accent-blue); }
+        .tab-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+        .label { font-size: 16px; margin-bottom: 5px; border-left: 4px solid var(--accent-blue); padding-left: 10px; font-weight: 700; }
+        .value { font-size: 54px; font-weight: 700; font-family: 'Orbitron'; line-height: 1.1; }
+        .unit { font-size: 20px; margin-left: 5px; }
+        .info-sub { font-size: 10px; opacity: 0.6; display: block; margin-top: 5px; }
+
+        .chart-container { height: 160px; margin-bottom: 5px; position: relative; }
+        .chart-title { font-size: 12px; font-weight: bold; margin-bottom: 8px; border-left: 3px solid #fff; padding-left: 8px; }
+    </style>
+    <script>
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwSrldtZzFPNiUz0tLuSnrVVMhwBDFYJztCp_t13VKVuqf697TWlljm9BU9ItWaAbcO/exec';
+        let charts = { temp: null, humi: null, di: null };
+
+        function updateSeason() {
+            const month = new Date().getMonth() + 1;
+            const body = document.body;
+            body.classList.remove('spring', 'summer', 'autumn', 'winter');
+            if (month >= 3 && month <= 5) body.classList.add('spring');
+            else if (month >= 6 && month <= 8) body.classList.add('summer');
+            else if (month >= 9 && month <= 11) body.classList.add('autumn');
+            else { body.classList.add('winter'); initSnow(); }
+        }
+
+        function initSnow() {
+            const container = document.getElementById('snow-container');
+            if (!container || container.innerHTML !== '') return;
+            container.style.display = 'block';
+            for (let i = 0; i < 30; i++) {
+                const flake = document.createElement('div');
+                flake.className = 'snowflake'; flake.innerHTML = '❄';
+                flake.style.left = Math.random() * 100 + 'vw';
+                flake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                flake.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                flake.style.animationDelay = (Math.random() * 5) + 's';
+                container.appendChild(flake);
+            }
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.content-page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.getElementById('page_' + tabId).classList.add('active');
+            document.getElementById('tab_' + tabId).classList.add('active');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const w = ["日","月","火","水","木","金","土"][now.getDay()];
+            document.getElementById('today_date').innerText = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${w})`;
+            document.getElementById('current_time').innerText = now.toTimeString().split(' ')[0];
+        }
+
+        async function updateData() {
+            try {
+                const res = await fetch(GAS_URL);
+                const data = await res.json();
+                
+                const t = data.temp !== undefined ? Number(data.temp) : null;
+                const h = data.humi !== undefined ? Number(data.humi) : null;
+                const d = data.di !== undefined ? Number(data.di) : null;
+                
+                document.querySelectorAll('.val_t').forEach(el => el.innerText = t !== null ? t.toFixed(1) : "-");
+                document.querySelectorAll('.val_h').forEach(el => el.innerText = h !== null ? h.toFixed(1) : "-");
+                document.querySelectorAll('.val_d').forEach(el => el.innerText = d !== null ? d.toFixed(1) : "-");
+                
+                document.getElementById('last_rx').innerText = new Date().toTimeString().split(' ')[0];
+
+                const msgBox = document.getElementById('m5_box');
+                const msgText = document.getElementById('m5_msg');
+                const msgStatus = document.getElementById('m5_status');
+                const steps = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
+                steps.forEach(s => { s.style.background = "rgba(255,255,255,0.1)"; });
+                
+                if (d === null) {
+                    msgStatus.innerText = "通信待機中"; msgText.innerText = "データを待っています...";
+                } else if (d >= 80) {
+                    msgStatus.innerText = "🚨 猛暑警戒"; msgText.innerText = "熱中症に厳重注意！"; msgBox.style.borderLeftColor = "#ff0000";
+                    steps.forEach(s => { s.style.background = "#ff0000"; });
+                } else if (d >= 70) {
+                    msgStatus.innerText = "⚠️ 注意"; msgText.innerText = "少し暑さを感じます。"; msgBox.style.borderLeftColor = "#ffcc00";
+                    [steps[0], steps[1]].forEach(s => { s.style.background = "#ffcc00"; });
+                } else {
+                    msgStatus.innerText = "✨ 快適"; msgText.innerText = "理想的な環境です。"; msgBox.style.borderLeftColor = "#00d2ff";
+                    steps[0].style.background = "#00d2ff";
+                }
+
+                const tbody = document.getElementById('history_body');
+                if (data.history && Array.isArray(data.history)) {
+                    tbody.innerHTML = '';
+                    let labels = [], tData = [], hData = [], dData = [];
+                    let maxT = -Infinity, minT = Infinity, maxH = -Infinity, minH = Infinity;
+
+                    data.history.forEach(row => {
+                        const rowT = (row.temp !== "" && row.temp !== null) ? Number(row.temp) : NaN;
+                        const rowH = (row.humi !== "" && row.humi !== null) ? Number(row.humi) : NaN;
+                        const rowD = (row.di !== "" && row.di !== null) ? Number(row.di) : NaN;
+
+                        if (!isNaN(rowT)) { if (rowT > maxT) maxT = rowT; if (rowT < minT) minT = rowT; }
+                        if (!isNaN(rowH)) { if (rowH > maxH) maxH = rowH; if (rowH < minH) minH = rowH; }
+
+                        tbody.innerHTML += `<tr>
+                            <td>${row.time}</td>
+                            <td style="color:#ff512f">${!isNaN(rowT) ? rowT.toFixed(1) : "-"}</td>
+                            <td style="color:#00d2ff">${!isNaN(rowH) ? rowH.toFixed(1) : "-"}</td>
+                            <td style="color:#a8e6cf">${!isNaN(rowD) ? rowD.toFixed(0) : "-"}</td>
+                        </tr>`;
+
+                        labels.unshift(row.time);
+                        tData.unshift(!isNaN(rowT) ? rowT : null);
+                        hData.unshift(!isNaN(rowH) ? rowH : null);
+                        dData.unshift(!isNaN(rowD) ? rowD : null);
+                    });
+
+                    document.getElementById('max_t').innerText = maxT !== -Infinity ? maxT.toFixed(1) : "--.-";
+                    document.getElementById('min_t').innerText = minT !== Infinity ? minT.toFixed(1) : "--.-";
+                    document.getElementById('max_h').innerText = maxH !== -Infinity ? maxH.toFixed(1) : "--.-";
+                    document.getElementById('min_h').innerText = minH !== Infinity ? minH.toFixed(1) : "--.-";
+
+                    updateCharts(labels, tData, hData, dData);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function createChart(ctx, label, data, color, dashed = false) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        borderWidth: 2,
+                        pointRadius: 1,
+                        fill: false,
+                        borderDash: dashed ? [5, 5] : []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#fff', font: { size: 9 } }, grid: { display: false } },
+                        y: { ticks: { color: '#fff', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(labels, tData, hData, dData) {
+            const cfg = [
+                { id: 'tempChart', label: '温度', data: tData, color: '#ff512f', key: 'temp' },
+                { id: 'humiChart', label: '湿度', data: hData, color: '#00d2ff', key: 'humi' },
+                { id: 'diChart', label: '不快指数', data: dData, color: '#a8e6cf', key: 'di', dash: true }
+            ];
+
+            cfg.forEach(c => {
+                const ctx = document.getElementById(c.id).getContext('2d');
+                if (charts[c.key]) {
+                    charts[c.key].data.labels = labels;
+                    charts[c.key].data.datasets[0].data = c.data;
+                    charts[c.key].update();
+                } else {
+                    charts[c.key] = createChart(ctx, c.label, c.data, c.color, c.dash);
+                    charts[c.key].data.labels = labels;
+                    charts[c.key].update();
+                }
+            });
+        }
+
+        window.onload = () => { 
+            updateSeason(); showTab('home'); updateClock(); updateData(); 
+            setInterval(updateData, 10000); setInterval(updateClock, 1000); 
+        };
+    </script>
+</head>
+<body>
+    <div id="snow-container"></div>
+    <div class="container">
+        <div id="page_home" class="content-page active">
+            <h1>ダッシュボード</h1>
+            <div class="card clock-card">
+                <div id="today_date" class="date-display">----年--月--日 (-)</div>
+                <div id="current_time" class="time-display">00:00:00</div>
+            </div>
+            <div class="stats-title">温度統計 (直近3時間)</div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">最高気温</div><div class="stat-val" style="color:#ff512f;"><span id="max_t">--.-</span><small style="font-size:14px">℃</small></div></div>
+                <div class="stat-card"><div class="stat-label">最低気温</div><div class="stat-val" style="color:#00d2ff;"><span id="min_t">--.-</span><small style="font-size:14px">℃</small></div></div>
+            </div>
+            <div class="stats-title">湿度統計 (直近3時間)</div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">最高湿度</div><div class="stat-val" style="color:#00d2ff;"><span id="max_h">--.-</span><small style="font-size:14px">%</small></div></div>
+                <div class="stat-card"><div class="stat-label">最低湿度</div><div class="stat-val" style="color:#a8e6cf;"><span id="min_h">--.-</span><small style="font-size:14px">%</small></div></div>
+            </div>
+            <div class="stats-title">環境アドバイス</div>
+            <div class="m5-box" id="m5_box">
+                <span class="advice-status" id="m5_status">解析中...</span>
+                <div class="level-indicator">
+                    <div class="level-step" id="s1"></div><div class="level-step" id="s2"></div><div class="level-step" id="s3"></div><div class="level-step" id="s4"></div>
+                </div>
+                <span class="advice-text" id="m5_msg">取得中...</span>
+            </div>
+        </div>
+        
+        <div id="page_history" class="content-page">
+            <h1>トレンド分析</h1>
+            <div class="card">
+                <div class="chart-title" style="color:#ff512f;">温度 (℃)</div>
+                <div class="chart-container"><canvas id="tempChart"></canvas></div>
+                <div class="chart-title" style="color:#00d2ff; margin-top:20px;">湿度 (%)</div>
+                <div class="chart-container"><canvas id="humiChart"></canvas></div>
+                <div class="chart-title" style="color:#a8e6cf; margin-top:20px;">不快指数 (pt)</div>
+                <div class="chart-container"><canvas id="diChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="chart-title">履歴ログ</div>
+                <table class="history-table">
+                    <thead><tr><th>時刻</th><th>温度</th><th>湿度</th><th>指数</th></tr></thead>
+                    <tbody id="history_body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="page_realtime" class="content-page">
+            <h1>速報値</h1>
+            <div class="card"><div class="label">現在の温度</div><div class="value"><span class="val_t">--.-</span><span class="unit">℃</span></div></div>
+            <div class="card"><div class="label">現在の湿度</div><div class="value"><span class="val_h">--.-</span><span class="unit">%</span></div></div>
+            <div class="card"><div class="label">不快指数</div><div class="value"><span class="val_d">--.-</span><span class="unit">pt</span></div></div>
+        </div>
+
+        <div id="page_status" class="content-page">
+            <h1>デバイス情報</h1>
+            <div class="card">
+                <p style="line-height: 2.2; text-align:left;">
+                    ステータス: <span style="color:#00ff00;">● ONLINE</span><br>
+                    最終更新: <span id="last_rx">--:--:--</span><br>
+                    データ保存: 3時間サイクル削除設定済<br>
+                    地域: 日本 / 東京 (JST)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <div class="tab-item active" id="tab_home" onclick="showTab('home')"><span class="tab-icon">🏠</span>ホーム</div>
+        <div class="tab-item" id="tab_history" onclick="showTab('history')"><span class="tab-icon">📜</span>履歴</div>
+        <div class="tab-item" id="tab_realtime" onclick="showTab('realtime')"><span class="tab-icon">📊</span>速報値</div>
+        <div class="tab-item" id="tab_status" onclick="showTab('status')"><span class="tab-icon">📡</span>状況</div>
+    </div>
+</body>
+</html>

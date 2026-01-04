@@ -1,0 +1,17 @@
+{
+  "name": "四季のルームモニター",
+  "short_name": "ルームモニター",
+  "description": "お部屋の環境をリアルタイムに監視",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f2027",
+  "theme_color": "#00d2ff",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
