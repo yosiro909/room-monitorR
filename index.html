@@ -11,7 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- スタイル設定：完全維持 --- */
         :root {
             --accent-blue: #00d2ff;
             --accent-red: #ff512f;
@@ -103,6 +102,17 @@
             else if (month >= 6 && month <= 8) body.classList.add('summer');
             else if (month >= 9 && month <= 11) body.classList.add('autumn');
             else { body.classList.add('winter'); initSnow(); }
+        }
+
+        async function updateLocation() {
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                const region = data.region ? data.region : "不明";
+                document.getElementById('display_region').innerText = `日本 / ${region}付近`;
+            } catch (e) {
+                console.log("地域情報の取得に失敗しました");
+            }
         }
 
         function initSnow() {
@@ -254,8 +264,9 @@
         }
 
         window.onload = () => { 
-            updateSeason(); showTab('home'); updateClock(); updateData(); 
-            setInterval(updateData, 10000); setInterval(updateClock, 1000); 
+            updateSeason(); showTab('home'); updateClock(); updateData(); updateLocation();
+            setInterval(updateData, 30000); 
+            setInterval(updateClock, 1000); 
         };
     </script>
 </head>
@@ -263,7 +274,7 @@
     <div id="snow-container"></div>
     <div class="container">
         <div id="page_home" class="content-page active">
-            <h1>ダッシュボード</h1>
+            <h1>ホーム</h1>
             <div class="card clock-card">
                 <div id="today_date" class="date-display">----年--月--日 (-)</div>
                 <div id="current_time" class="time-display">00:00:00</div>
@@ -320,9 +331,14 @@
                 <p style="line-height: 2.2; text-align:left;">
                     ステータス: <span style="color:#00ff00;">● ONLINE</span><br>
                     最終更新: <span id="last_rx">--:--:--</span><br>
-                    データ保存: 3時間サイクル削除設定済<br>
-                    地域: 日本 / 東京 (JST)
+                    データ保存: 最新100件 (約50分) 自動保持<br>
+                    更新頻度: 30秒 / サイクル<br>
+                    地域: <span id="display_region">取得中...</span> (JST)<br>
+                    ストレージ: クラウド自動ローテート方式
                 </p>
+            </div>
+            <div style="font-size: 11px; opacity: 0.5; text-align: left; padding: 0 15px; line-height: 1.5;">
+                ※履歴データは100件を超えると、古いデータから順に自動的に上書き・消去されます。
             </div>
         </div>
     </div>
