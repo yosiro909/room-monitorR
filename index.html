@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>四季のルームモニター v2.3 + History</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-512.png">
-    <meta name="theme-color" content="#00d2ff">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* --- スタイル設定：完全維持 --- */
         :root {
             --accent-blue: #00d2ff;
             --accent-red: #ff512f;
@@ -104,17 +101,6 @@
             else { body.classList.add('winter'); initSnow(); }
         }
 
-        async function updateLocation() {
-            try {
-                const res = await fetch('https://ipapi.co/json/');
-                const data = await res.json();
-                const region = data.region ? data.region : "不明";
-                document.getElementById('display_region').innerText = `日本 / ${region}付近`;
-            } catch (e) {
-                console.log("地域情報の取得に失敗しました");
-            }
-        }
-
         function initSnow() {
             const container = document.getElementById('snow-container');
             if (!container || container.innerHTML !== '') return;
@@ -149,13 +135,28 @@
                 const res = await fetch(GAS_URL);
                 const data = await res.json();
                 
+                // --- 更新時間チェック (10分判定) ---
+                let isExpired = false;
+                if (data.history && data.history.length > 0) {
+                    const now = new Date();
+                    const lastDataTime = new Date(); // 今日の日付
+                    const timeParts = data.history[0].time.split(':');
+                    lastDataTime.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]), parseInt(timeParts[2] || 0));
+                    
+                    // 10分 (600,000ミリ秒) 以上経過しているか判定
+                    if (now.getTime() - lastDataTime.getTime() > 600000) {
+                        isExpired = true;
+                    }
+                }
+
                 const t = data.temp !== undefined ? Number(data.temp) : null;
                 const h = data.humi !== undefined ? Number(data.humi) : null;
                 const d = data.di !== undefined ? Number(data.di) : null;
                 
-                document.querySelectorAll('.val_t').forEach(el => el.innerText = t !== null ? t.toFixed(1) : "-");
-                document.querySelectorAll('.val_h').forEach(el => el.innerText = h !== null ? h.toFixed(1) : "-");
-                document.querySelectorAll('.val_d').forEach(el => el.innerText = d !== null ? d.toFixed(1) : "-");
+                // 10分以上経過していたら「ー」にする
+                document.querySelectorAll('.val_t').forEach(el => el.innerText = (!isExpired && t !== null) ? t.toFixed(1) : "ー");
+                document.querySelectorAll('.val_h').forEach(el => el.innerText = (!isExpired && h !== null) ? h.toFixed(1) : "ー");
+                document.querySelectorAll('.val_d').forEach(el => el.innerText = (!isExpired && d !== null) ? d.toFixed(1) : "ー");
                 
                 document.getElementById('last_rx').innerText = new Date().toTimeString().split(' ')[0];
 
@@ -165,8 +166,10 @@
                 const steps = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
                 steps.forEach(s => { s.style.background = "rgba(255,255,255,0.1)"; });
                 
-                if (d === null) {
-                    msgStatus.innerText = "通信待機中"; msgText.innerText = "データを待っています...";
+                if (isExpired || d === null) {
+                    msgStatus.innerText = isExpired ? "信号途絶" : "通信待機中"; 
+                    msgText.innerText = isExpired ? "デバイスが10分以上オフラインです。" : "データを待っています...";
+                    msgBox.style.borderLeftColor = "#ccc";
                 } else if (d >= 80) {
                     msgStatus.innerText = "🚨 猛暑警戒"; msgText.innerText = "熱中症に厳重注意！"; msgBox.style.borderLeftColor = "#ff0000";
                     steps.forEach(s => { s.style.background = "#ff0000"; });
@@ -264,9 +267,8 @@
         }
 
         window.onload = () => { 
-            updateSeason(); showTab('home'); updateClock(); updateData(); updateLocation();
-            setInterval(updateData, 30000); 
-            setInterval(updateClock, 1000); 
+            updateSeason(); showTab('home'); updateClock(); updateData(); 
+            setInterval(updateData, 10000); setInterval(updateClock, 1000); 
         };
     </script>
 </head>
@@ -274,29 +276,15 @@
     <div id="snow-container"></div>
     <div class="container">
         <div id="page_home" class="content-page active">
-            <h1>ホーム</h1>
+            <h1>ダッシュボード</h1>
             <div class="card clock-card">
                 <div id="today_date" class="date-display">----年--月--日 (-)</div>
                 <div id="current_time" class="time-display">00:00:00</div>
             </div>
-            <div class="stats-title">温度統計</div>
-            <div class="stats-grid">
-                <div class="stat-card"><div class="stat-label">最高気温</div><div class="stat-val" style="color:#ff512f;"><span id="max_t">--.-</span><small style="font-size:14px">℃</small></div></div>
-                <div class="stat-card"><div class="stat-label">最低気温</div><div class="stat-val" style="color:#00d2ff;"><span id="min_t">--.-</span><small style="font-size:14px">℃</small></div></div>
-            </div>
-            <div class="stats-title">湿度統計</div>
-            <div class="stats-grid">
-                <div class="stat-card"><div class="stat-label">最高湿度</div><div class="stat-val" style="color:#00d2ff;"><span id="max_h">--.-</span><small style="font-size:14px">%</small></div></div>
-                <div class="stat-card"><div class="stat-label">最低湿度</div><div class="stat-val" style="color:#a8e6cf;"><span id="min_h">--.-</span><small style="font-size:14px">%</small></div></div>
-            </div>
-            <div class="stats-title">環境アドバイス</div>
-            <div class="m5-box" id="m5_box">
-                <span class="advice-status" id="m5_status">解析中...</span>
-                <div class="level-indicator">
-                    <div class="level-step" id="s1"></div><div class="level-step" id="s2"></div><div class="level-step" id="s3"></div><div class="level-step" id="s4"></div>
-                </div>
-                <span class="advice-text" id="m5_msg">取得中...</span>
-            </div>
+            
+            <div class="card"><div class="label">現在の温度</div><div class="value"><span class="val_t">--.-</span><span class="unit">℃</span></div></div>
+            <div class="card"><div class="label">現在の湿度</div><div class="value"><span class="val_h">--.-</span><span class="unit">%</span></div></div>
+            <div class="card"><div class="label">不快指数</div><div class="value"><span class="val_d">--.-</span><span class="unit">pt</span></div></div>
         </div>
         
         <div id="page_history" class="content-page">
@@ -319,10 +307,25 @@
         </div>
 
         <div id="page_realtime" class="content-page">
-            <h1>速報値</h1>
-            <div class="card"><div class="label">現在の温度</div><div class="value"><span class="val_t">--.-</span><span class="unit">℃</span></div></div>
-            <div class="card"><div class="label">現在の湿度</div><div class="value"><span class="val_h">--.-</span><span class="unit">%</span></div></div>
-            <div class="card"><div class="label">不快指数</div><div class="value"><span class="val_d">--.-</span><span class="unit">pt</span></div></div>
+            <h1>詳細分析</h1>
+            <div class="stats-title">温度統計 (直近3時間)</div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">最高気温</div><div class="stat-val" style="color:#ff512f;"><span id="max_t">--.-</span><small style="font-size:14px">℃</small></div></div>
+                <div class="stat-card"><div class="stat-label">最低気温</div><div class="stat-val" style="color:#00d2ff;"><span id="min_t">--.-</span><small style="font-size:14px">℃</small></div></div>
+            </div>
+            <div class="stats-title">湿度統計 (直近3時間)</div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">最高湿度</div><div class="stat-val" style="color:#00d2ff;"><span id="max_h">--.-</span><small style="font-size:14px">%</small></div></div>
+                <div class="stat-card"><div class="stat-label">最低湿度</div><div class="stat-val" style="color:#a8e6cf;"><span id="min_h">--.-</span><small style="font-size:14px">%</small></div></div>
+            </div>
+            <div class="stats-title">環境アドバイス</div>
+            <div class="m5-box" id="m5_box">
+                <span class="advice-status" id="m5_status">解析中...</span>
+                <div class="level-indicator">
+                    <div class="level-step" id="s1"></div><div class="level-step" id="s2"></div><div class="level-step" id="s3"></div><div class="level-step" id="s4"></div>
+                </div>
+                <span class="advice-text" id="m5_msg">取得中...</span>
+            </div>
         </div>
 
         <div id="page_status" class="content-page">
@@ -331,14 +334,9 @@
                 <p style="line-height: 2.2; text-align:left;">
                     ステータス: <span style="color:#00ff00;">● ONLINE</span><br>
                     最終更新: <span id="last_rx">--:--:--</span><br>
-                    データ保存: 最新100件 (約50分) 自動保持<br>
-                    更新頻度: 30秒 / サイクル<br>
-                    地域: <span id="display_region">取得中...</span> (JST)<br>
-                    ストレージ: クラウド自動ローテート方式
+                    データ保存: 3時間サイクル削除設定済<br>
+                    地域: 日本 / 東京 (JST)
                 </p>
-            </div>
-            <div style="font-size: 11px; opacity: 0.5; text-align: left; padding: 0 15px; line-height: 1.5;">
-                ※履歴データは100件を超えると、古いデータから順に自動的に上書き・消去されます。
             </div>
         </div>
     </div>
