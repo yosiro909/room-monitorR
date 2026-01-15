@@ -3,89 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>四季のルームモニター v2.6 + Snow FX</title>
+    <title>四季のルームモニター v3.3.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- スタイル設定 --- */
         :root {
-            --accent-blue: #00d2ff;
-            --accent-red: #ff512f;
-            --accent-green: #a8e6cf;
+            --accent-blue: #00d2ff; --accent-red: #ff512f; --accent-green: #a8e6cf;
             --bg-glass: rgba(255, 255, 255, 0.12);
             --season-grad: linear-gradient(-45deg, #1e3c72, #2a5298, #000428, #004e92);
         }
-
         body { 
-            font-family: 'Noto Sans JP', sans-serif; 
-            text-align: center; 
-            background: var(--season-grad); 
-            background-size: 400% 400%; 
-            animation: gradientBG 15s ease infinite; 
-            margin: 0; padding: 10px 15px 100px 15px; 
-            color: #fff; min-height: 100vh; overflow-x: hidden; 
-            transition: background 2s ease;
+            font-family: 'Noto Sans JP', sans-serif; text-align: center; 
+            background: var(--season-grad); background-size: 400% 400%; 
+            animation: gradientBG 15s ease infinite; margin: 0; padding: 10px 15px 100px 15px; 
+            color: #fff; min-height: 100vh; overflow-x: hidden;
         }
-
-        /* 雪のエフェクト */
         #weather-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-        .snowflake { 
-            position: absolute; top: -20px; color: white; opacity: 0.7; 
-            animation: fall linear infinite, sideWays ease-in-out infinite; 
-            user-select: none;
-        }
-
+        .snowflake { position: absolute; top: -20px; color: white; opacity: 0.7; animation: fall linear infinite, sideWays ease-in-out infinite; }
         @keyframes fall { to { transform: translateY(110vh); } }
-        @keyframes sideWays { 
-            0%, 100% { margin-left: 0; } 
-            50% { margin-left: 30px; } 
-        }
+        @keyframes sideWays { 0%, 100% { margin-left: 0; } 50% { margin-left: 30px; } }
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        
         .container { max-width: 480px; margin: auto; position: relative; z-index: 2; }
         .content-page { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s; }
         .content-page.active { display: block; opacity: 1; transform: translateY(0); }
-        
-        h1 { font-size: 24px; margin: 15px 0; letter-spacing: 2px; border-bottom: 2px solid var(--accent-blue); display: inline-block; padding-bottom: 5px; }
-        .card { background: var(--bg-glass); border-radius: 24px; padding: 20px; margin-bottom: 15px; text-align: left; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 8px 32px rgba(0,0,0,0.4); backdrop-filter: blur(5px); }
-        .clock-card { text-align: center; background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.3)); }
-        .date-display { font-size: 20px; color: #fff; margin-bottom: 5px; font-weight: 700; font-family: 'Orbitron'; }
+        h1 { font-size: 24px; margin: 15px 0; border-bottom: 2px solid var(--accent-blue); display: inline-block; padding-bottom: 5px; }
+        .card { background: var(--bg-glass); border-radius: 24px; padding: 20px; margin-bottom: 15px; text-align: left; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(5px); }
+        .clock-card { text-align: center; }
+        .date-display { font-size: 18px; font-family: 'Orbitron'; margin-bottom: 5px; }
         .time-display { font-size: 48px; font-weight: 700; font-family: 'Orbitron'; background: rgba(0,0,0,0.3); border-radius: 12px; display: block; padding: 8px 0; }
-        
-        .history-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
         .history-table th, .history-table td { padding: 8px 2px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .history-table th { color: var(--accent-blue); font-size: 10px; font-weight: 900; }
+        .history-table th { color: var(--accent-blue); font-size: 10px; }
         .history-table td { font-family: 'Orbitron'; }
-        
-        .col-t { color: #ff8a75; }
-        .col-h { color: #7de2ff; }
-        .col-d { color: #a8e6cf; }
-
-        .stats-title { font-size: 14px; text-align: left; margin: 15px 0 10px 10px; color: var(--accent-blue); font-weight: 900; }
-        .stats-grid { display: flex; gap: 12px; margin-bottom: 12px; }
-        .stat-card { flex: 1; background: rgba(0,0,0,0.2); border-radius: 18px; padding: 15px 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .stat-label { font-size: 11px; opacity: 0.8; margin-bottom: 5px; font-weight: bold; color: #fff; }
-        .stat-val { font-size: 22px; font-weight: 700; font-family: 'Orbitron'; color: #ffffff !important; }
-
+        .col-t { color: #ff8a75; } .col-h { color: #7de2ff; } .col-d { color: #a8e6cf; }
+        .stats-title { font-size: 14px; text-align: left; margin: 20px 0 10px 10px; color: var(--accent-blue); font-weight: 900; border-left: 4px solid var(--accent-blue); padding-left: 10px;}
+        .stats-grid { display: flex; gap: 10px; margin-bottom: 10px; }
+        .stat-card { flex: 1; background: rgba(0,0,0,0.3); border-radius: 18px; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .stat-label { font-size: 10px; opacity: 0.8; margin-bottom: 4px; }
+        .stat-val { font-size: 16px; font-weight: 700; font-family: 'Orbitron'; }
         .m5-box { background: rgba(0,0,0,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px; border-left: 8px solid #ccc; text-align: left; }
         .advice-card { background: rgba(255,255,255,0.08); border-radius: 15px; padding: 15px; margin-bottom: 12px; border-left: 4px solid var(--accent-blue); }
-        .advice-header { font-size: 13px; font-weight: 900; margin-bottom: 5px; opacity: 0.9; display: flex; align-items: center; gap: 5px; }
-        .advice-status { font-size: 16px; display: block; margin-bottom: 10px; font-weight: 900; }
+        .advice-header { font-size: 13px; font-weight: 900; margin-bottom: 5px; }
         .level-indicator { display: flex; gap: 5px; margin-bottom: 15px; height: 8px; }
         .level-step { flex: 1; background: rgba(255,255,255,0.1); border-radius: 4px; }
-        .advice-text { font-size: 14px; line-height: 1.6; font-weight: 700; color: #eee; }
-
-        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(15px); display: flex; padding: 12px 0 25px 0; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
-        .tab-item { color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; text-align: center; flex: 1; font-weight: 700; }
+        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(15px); display: flex; padding: 12px 0 25px 0; z-index: 100; }
+        .tab-item { color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; text-align: center; flex: 1; }
         .tab-item.active { color: #fff; text-shadow: 0 0 10px var(--accent-blue); }
-        .tab-icon { font-size: 24px; display: block; margin-bottom: 4px; }
-        
+        .tab-icon { font-size: 24px; display: block; }
         .label { font-size: 16px; margin-bottom: 5px; border-left: 4px solid var(--accent-blue); padding-left: 10px; font-weight: 700; }
         .value { font-size: 54px; font-weight: 700; font-family: 'Orbitron'; line-height: 1.1; }
         .unit { font-size: 20px; margin-left: 5px; }
-
-        .chart-container { height: 160px; margin-bottom: 5px; position: relative; }
-        .chart-title { font-size: 12px; font-weight: bold; margin-bottom: 8px; border-left: 3px solid #fff; padding-left: 8px; }
+        .chart-container { height: 160px; margin-bottom: 5px; }
+        .chart-title { font-size: 12px; font-weight: bold; border-left: 3px solid #fff; padding-left: 8px; }
     </style>
     <script>
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwSrldtZzFPNiUz0tLuSnrVVMhwBDFYJztCp_t13VKVuqf697TWlljm9BU9ItWaAbcO/exec';
@@ -96,13 +65,10 @@
             layer.innerHTML = '';
             for(let i=0; i<40; i++) {
                 const s = document.createElement('div');
-                s.className = 'snowflake';
-                s.innerHTML = '❄';
+                s.className = 'snowflake'; s.innerHTML = '❄';
                 s.style.left = Math.random() * 100 + 'vw';
                 s.style.animationDuration = (Math.random() * 3 + 4) + 's';
-                s.style.animationDelay = Math.random() * 5 + 's';
                 s.style.fontSize = (Math.random() * 10 + 10) + 'px';
-                s.style.opacity = Math.random();
                 layer.appendChild(s);
             }
         }
@@ -117,39 +83,59 @@
         function updateClock() {
             const now = new Date();
             const w = ["日","月","火","水","木","金","土"][now.getDay()];
-            document.getElementById('today_date').innerText = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${w})`;
+            document.getElementById('today_date').innerText = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} (${w})`;
             document.getElementById('current_time').innerText = now.toTimeString().split(' ')[0];
+        }
+
+        async function fetchLocation(ip) {
+            const locEl = document.getElementById('dev_loc');
+            if (!ip || ip === "----" || ip === "取得不可") {
+                locEl.innerText = "判定不可";
+                return;
+            }
+            if (ip.startsWith("192.168.") || ip.startsWith("10.") || ip.startsWith("172.")) {
+                locEl.innerText = "ローカルネットワーク";
+                return;
+            }
+            try {
+                const res = await fetch(`https://ipapi.co/${ip}/json/`);
+                if (!res.ok) throw new Error();
+                const loc = await res.json();
+                locEl.innerText = loc.city ? `${loc.region} ${loc.city}` : "判定不可";
+            } catch (e) {
+                locEl.innerText = "取得制限またはエラー";
+            }
         }
 
         async function updateData() {
             try {
                 const res = await fetch(GAS_URL);
                 const data = await res.json();
+                const now = new Date();
+                
                 let isExpired = false;
                 let lastFullTimeStr = "----/--/-- --:--:--";
 
                 if (data.history && data.history.length > 0) {
-                    const now = new Date();
-                    const lastDataTime = new Date();
-                    const timeParts = data.history[0].time.split(':');
-                    lastDataTime.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]), parseInt(timeParts[2] || 0));
-                    lastFullTimeStr = `${lastDataTime.getFullYear()}/${String(lastDataTime.getMonth() + 1).padStart(2, '0')}/${String(lastDataTime.getDate()).padStart(2, '0')} ${data.history[0].time}`;
-                    if (now.getTime() - lastDataTime.getTime() > 600000) { isExpired = true; }
+                    const latest = data.history[0];
+                    const cleanDate = latest.date.replace(/-/g, '/');
+                    lastFullTimeStr = `${cleanDate} ${latest.time}`;
+                    
+                    let lastDataTime = new Date(lastFullTimeStr);
+                    if (now.getTime() - lastDataTime.getTime() > 600000) isExpired = true;
+
+                    const ip = data.ip || latest.ip || "取得不可";
+                    document.getElementById('dev_ip').innerText = ip;
+                    fetchLocation(ip);
                 }
 
-                const t = Number(data.temp);
-                const h = Number(data.humi);
-                const di = Number(data.di);
-
-                document.querySelectorAll('.val_t').forEach(el => el.innerText = isExpired ? "ー" : t.toFixed(1));
-                document.querySelectorAll('.val_h').forEach(el => el.innerText = isExpired ? "ー" : h.toFixed(1));
-                document.querySelectorAll('.val_d').forEach(el => el.innerText = isExpired ? "ー" : di.toFixed(1));
+                document.querySelectorAll('.val_t').forEach(el => el.innerText = isExpired ? "ー" : Number(data.temp).toFixed(1));
+                document.querySelectorAll('.val_h').forEach(el => el.innerText = isExpired ? "ー" : Number(data.humi).toFixed(1));
+                document.querySelectorAll('.val_d').forEach(el => el.innerText = isExpired ? "ー" : Number(data.di).toFixed(1));
                 document.getElementById('last_rx').innerText = lastFullTimeStr;
 
-                updateAdviceUI(isExpired, t, h, di);
-
                 if (data.history) {
-                    let maxT = -Infinity, minT = Infinity, maxH = -Infinity, minH = Infinity;
+                    let maxT = -99, minT = 99, maxH = -99, minH = 100;
                     let labels = [], tData = [], hData = [], dData = [];
                     let tableHtml = '';
 
@@ -157,10 +143,14 @@
                         const rt = Number(row.temp); const rh = Number(row.humi); const rd = Number(row.di);
                         if (rt > maxT) maxT = rt; if (rt < minT) minT = rt;
                         if (rh > maxH) maxH = rh; if (rh < minH) minH = rh;
-                        labels.unshift(row.time); tData.unshift(rt); hData.unshift(rh); dData.unshift(rd);
+                        
+                        labels.unshift(row.time); 
+                        tData.unshift(rt); hData.unshift(rh); dData.unshift(rd);
 
+                        const shortDate = row.date.split('-').slice(1).join('/'); 
                         tableHtml += `<tr>
-                            <td class="col-time">${row.time}</td>
+                            <td style="color:var(--accent-blue); font-size:10px;">${shortDate}</td>
+                            <td>${row.time}</td>
                             <td class="col-t">${rt.toFixed(1)}</td>
                             <td class="col-h">${rh.toFixed(0)}</td>
                             <td class="col-d">${rd.toFixed(0)}</td>
@@ -172,67 +162,76 @@
                     document.getElementById('min_t').innerText = minT.toFixed(1);
                     document.getElementById('max_h').innerText = maxH.toFixed(1);
                     document.getElementById('min_h').innerText = minH.toFixed(1);
+                    
                     updateCharts(labels, tData, hData, dData);
+                    updateAdviceUI(isExpired, Number(data.temp), Number(data.humi), Number(data.di));
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Update Error:", e); }
         }
 
         function updateAdviceUI(isExpired, t, h, di) {
             const msgBox = document.getElementById('m5_box');
             const msgStatus = document.getElementById('m5_status');
             const msgText = document.getElementById('m5_msg');
-            const tempAdvice = document.getElementById('temp_advice_text');
-            const humiAdvice = document.getElementById('humi_advice_text');
             const steps = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
 
             if (isExpired) {
-                msgStatus.innerText = "信号途絶"; msgText.innerText = "デバイスがオフラインです。";
+                msgStatus.innerText = "オフライン"; 
+                msgText.innerText = "デバイスからの信号が途絶えています。";
                 msgBox.style.borderLeftColor = "#ccc";
+                steps.forEach(s => s.style.background = "rgba(255,255,255,0.1)");
             } else {
                 steps.forEach(s => s.style.background = "rgba(255,255,255,0.1)");
                 if (di >= 80) {
-                    msgStatus.innerText = "🚨 猛暑警戒レベル"; msgText.innerText = "熱中症のリスクが非常に高い状態です。";
-                    msgBox.style.borderLeftColor = "#ff512f"; steps.forEach(s => s.style.background = "#ff512f");
+                    msgStatus.innerText = "🚨 警戒レベル"; 
+                    msgText.innerText = "不快指数が非常に高いです。冷房や換気で調整してください。";
+                    msgBox.style.borderLeftColor = "#ff512f";
+                    steps.forEach(s => s.style.background = "#ff512f");
                 } else if (di >= 75) {
-                    msgStatus.innerText = "⚠️ 警戒・注意レベル"; msgText.innerText = "やや不快な暑さです。こまめな休憩を。";
-                    msgBox.style.borderLeftColor = "#ffcc00"; [steps[0], steps[1], steps[2]].forEach(s => s.style.background = "#ffcc00");
+                    msgStatus.innerText = "⚠️ 注意レベル"; 
+                    msgText.innerText = "やや蒸し暑さを感じます。適切な温度調節を心がけましょう。";
+                    msgBox.style.borderLeftColor = "#ffcc00";
+                    [steps[0], steps[1], steps[2]].forEach(s => s.style.background = "#ffcc00");
                 } else {
-                    msgStatus.innerText = "✨ 快適環境"; msgText.innerText = "現在、理想的な室内環境が保たれています。";
-                    msgBox.style.borderLeftColor = "#00d2ff"; steps[0].style.background = "#00d2ff";
+                    msgStatus.innerText = "✨ 快適環境"; 
+                    msgText.innerText = "現在、お部屋は非常に過ごしやすい環境に保たれています。";
+                    msgBox.style.borderLeftColor = "#00d2ff";
+                    steps[0].style.background = "#00d2ff";
                 }
-                if (t >= 28) tempAdvice.innerText = "室温が高めです。エアコンを適切に使用しましょう。";
-                else if (t <= 18) tempAdvice.innerText = "少し肌寒いようです。暖房や着衣で調整を。";
-                else tempAdvice.innerText = "過ごしやすい温度です。";
-                
-                if (h <= 40) humiAdvice.innerText = "乾燥しています。加湿や水分補給を。";
-                else if (h >= 70) humiAdvice.innerText = "湿度が高いです。換気や除湿を検討してください。";
-                else humiAdvice.innerText = "理想的な湿度範囲内です。";
+                document.getElementById('temp_advice_text').innerText = t >= 28 ? "冷房の使用を推奨します。" : (t <= 18 ? "暖房等で保温してください。" : "適切な温度です。");
+                document.getElementById('humi_advice_text').innerText = h <= 40 ? "乾燥に注意。加湿を推奨。" : (h >= 70 ? "湿気が多いです。換気を。" : "理想的な湿度です。");
             }
-        }
-
-        function createChart(ctx, label, data, color, dashed = false) {
-            return new Chart(ctx, {
-                type: 'line',
-                data: { labels: [], datasets: [{ label: label, data: data, borderColor: color, borderWidth: 2, pointRadius: 1, fill: false, borderDash: dashed ? [5, 5] : [] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#fff', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#fff', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.1)' } } } }
-            });
         }
 
         function updateCharts(labels, tData, hData, dData) {
+            const cfg = (label, data, color) => ({
+                type: 'line',
+                data: { labels, datasets: [{ label, data, borderColor: color, borderWidth: 2, pointRadius: 2, pointHoverRadius: 6, fill: false, tension: 0.3 }] },
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { enabled: true, backgroundColor: 'rgba(0, 0, 0, 0.8)', titleFont: { size: 10 }, bodyFont: { size: 12, family: 'Orbitron' }, displayColors: false } 
+                    }, 
+                    scales: { 
+                        x: { ticks: { color: '#fff', font: { size: 8 } }, grid: { display: false } }, 
+                        y: { ticks: { color: '#fff', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.1)' } } 
+                    } 
+                }
+            });
             if (!charts.temp) {
-                charts.temp = createChart(document.getElementById('tempChart').getContext('2d'), '温度', tData, '#ff512f');
-                charts.humi = createChart(document.getElementById('humiChart').getContext('2d'), '湿度', hData, '#00d2ff');
-                charts.di = createChart(document.getElementById('diChart').getContext('2d'), '指数', dData, '#a8e6cf', true);
+                charts.temp = new Chart(document.getElementById('tempChart'), cfg('温度', tData, '#ff512f'));
+                charts.humi = new Chart(document.getElementById('humiChart'), cfg('湿度', hData, '#00d2ff'));
+                charts.di = new Chart(document.getElementById('diChart'), cfg('指数', dData, '#a8e6cf'));
+            } else {
+                charts.temp.data.labels = labels; charts.temp.data.datasets[0].data = tData; charts.temp.update('none');
+                charts.humi.data.labels = labels; charts.humi.data.datasets[0].data = hData; charts.humi.update('none');
+                charts.di.data.labels = labels; charts.di.data.datasets[0].data = dData; charts.di.update('none');
             }
-            charts.temp.data.labels = labels; charts.temp.data.datasets[0].data = tData; charts.temp.update();
-            charts.humi.data.labels = labels; charts.humi.data.datasets[0].data = hData; charts.humi.update();
-            charts.di.data.labels = labels; charts.di.data.datasets[0].data = dData; charts.di.update();
         }
 
-        window.onload = () => { 
-            startSnowEffect(); showTab('home'); updateClock(); updateData(); 
-            setInterval(updateData, 10000); setInterval(updateClock, 1000); 
-        };
+        window.onload = () => { startSnowEffect(); showTab('home'); updateClock(); updateData(); setInterval(updateData, 30000); setInterval(updateClock, 1000); };
     </script>
 </head>
 <body>
@@ -241,28 +240,33 @@
         <div id="page_home" class="content-page active">
             <h1>ダッシュボード</h1>
             <div class="card clock-card">
-                <div id="today_date" class="date-display">----年--月--日 (-)</div>
+                <div id="today_date" class="date-display">----/--/-- (-)</div>
                 <div id="current_time" class="time-display">00:00:00</div>
             </div>
             <div class="card"><div class="label">現在の温度</div><div class="value"><span class="val_t">--.-</span><span class="unit">℃</span></div></div>
             <div class="card"><div class="label">現在の湿度</div><div class="value"><span class="val_h">--.-</span><span class="unit">%</span></div></div>
             <div class="card"><div class="label">不快指数</div><div class="value"><span class="val_d">--.-</span><span class="unit">pt</span></div></div>
+            <div class="stats-title">本日の統計 (直近20件)</div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">最高/最低気温</div><div class="stat-val"><span id="max_t">--.-</span> / <span id="min_t">--.-</span> ℃</div></div>
+                <div class="stat-card"><div class="stat-label">最高/最低湿度</div><div class="stat-val"><span id="max_h">--.-</span> / <span id="min_h">--.-</span> %</div></div>
+            </div>
         </div>
         
         <div id="page_history" class="content-page">
             <h1>トレンド分析</h1>
             <div class="card">
-                <div class="chart-title" style="color:#ff512f;">温度 (℃)</div>
+                <div class="chart-title" style="color:#ff512f;">温度推移</div>
                 <div class="chart-container"><canvas id="tempChart"></canvas></div>
-                <div class="chart-title" style="color:#00d2ff; margin-top:20px;">湿度 (%)</div>
+                <div class="chart-title" style="color:#00d2ff; margin-top:10px;">湿度推移</div>
                 <div class="chart-container"><canvas id="humiChart"></canvas></div>
-                <div class="chart-title" style="color:#a8e6cf; margin-top:20px;">不快指数 (pt)</div>
+                <div class="chart-title" style="color:#a8e6cf; margin-top:10px;">不快指数推移</div>
                 <div class="chart-container"><canvas id="diChart"></canvas></div>
             </div>
             <div class="card">
-                <div class="chart-title">履歴ログ (直近)</div>
+                <div class="chart-title">履歴ログ</div>
                 <table class="history-table">
-                    <thead><tr><th>時刻</th><th>温度</th><th>湿度</th><th>指数</th></tr></thead>
+                    <thead><tr><th>日付</th><th>時刻</th><th>温度</th><th>湿度</th><th>指数</th></tr></thead>
                     <tbody id="history_body"></tbody>
                 </table>
             </div>
@@ -271,43 +275,26 @@
         <div id="page_advice" class="content-page">
             <h1>環境アドバイス</h1>
             <div class="m5-box" id="m5_box">
-                <span class="advice-status" id="m5_status">解析中...</span>
+                <span id="m5_status" style="font-weight:900;">解析中...</span>
                 <div class="level-indicator">
                     <div class="level-step" id="s1"></div><div class="level-step" id="s2"></div><div class="level-step" id="s3"></div><div class="level-step" id="s4"></div>
                 </div>
-                <span class="advice-text" id="m5_msg">データを取得しています...</span>
+                <span id="m5_msg">データを取得しています...</span>
             </div>
-            <div class="advice-card temp">
-                <div class="advice-header">🌡 温度のアドバイス</div>
-                <div class="advice-text" id="temp_advice_text">分析中...</div>
-            </div>
-            <div class="advice-card humi">
-                <div class="advice-header">💧 湿度のアドバイス</div>
-                <div class="advice-text" id="humi_advice_text">分析中...</div>
-            </div>
-            <div class="stats-title">直近3時間の統計データ</div>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">最高/最低気温</div>
-                    <div class="stat-val"><span id="max_t">--.-</span><small>℃</small> / <span id="min_t">--.-</span><small>℃</small></div>
-                </div>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">最高/最低湿度</div>
-                    <div class="stat-val"><span id="max_h">--.-</span><small>%</small> / <span id="min_h">--.-</span><small>%</small></div>
-                </div>
-            </div>
+            <div class="advice-card"><div class="advice-header">🌡 温度</div><div id="temp_advice_text">分析中...</div></div>
+            <div class="advice-card"><div class="advice-header">💧 湿度</div><div id="humi_advice_text">分析中...</div></div>
         </div>
 
         <div id="page_device" class="content-page">
             <h1>デバイス情報</h1>
             <div class="card">
-                <p style="line-height: 2.2; text-align:left;">
+                <p style="line-height: 2.2;">
                     ステータス: <span style="color:#00ff00;">● ONLINE</span><br>
-                    最終受信日時: <br><span id="last_rx" style="font-family:'Orbitron'; font-weight:700; color:var(--accent-blue);">----/--/-- --:--:--</span><br>
-                    地域: 日本 / 東京 (JST)
+                    最終受信: <span id="last_rx" style="color:var(--accent-blue);">----/--/-- --:--:--</span><br>
+                    IPアドレス: <span id="dev_ip" style="color:var(--accent-blue); font-family:'Orbitron';">----</span><br>
+                    推定現在地: <span id="dev_loc" style="color:var(--accent-green);">取得中...</span>
                 </p>
+                <p style="font-size:10px; opacity:0.6; margin-top:15px;">※IPアドレスはM5Stackから送信されたログを参照しています。現在地はIPに基づく推測であり誤差があります。</p>
             </div>
         </div>
     </div>
@@ -316,7 +303,7 @@
         <div class="tab-item active" id="tab_home" onclick="showTab('home')"><span class="tab-icon">🏠</span>ホーム</div>
         <div class="tab-item" id="tab_history" onclick="showTab('history')"><span class="tab-icon">📜</span>履歴</div>
         <div class="tab-item" id="tab_advice" onclick="showTab('advice')"><span class="tab-icon">💡</span>アドバイス</div>
-        <div class="tab-item" id="tab_device" onclick="showTab('device')"><span class="tab-icon">📡</span>デバイス情報</div>
+        <div class="tab-item" id="tab_device" onclick="showTab('device')"><span class="tab-icon">📡</span>情報</div>
     </div>
 </body>
 </html>
