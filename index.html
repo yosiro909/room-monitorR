@@ -94,14 +94,15 @@
                 return;
             }
             if (ip.startsWith("192.168.") || ip.startsWith("10.") || ip.startsWith("172.")) {
-                locEl.innerText = "ローカルネットワーク";
+                locEl.innerText = "日本 / ローカルネットワーク";
                 return;
             }
             try {
                 const res = await fetch(`https://ipapi.co/${ip}/json/`);
                 if (!res.ok) throw new Error();
                 const loc = await res.json();
-                locEl.innerText = loc.city ? `${loc.region} ${loc.city}` : "判定不可";
+                // 地域：国名/○○付近 の形式に修正
+                locEl.innerText = `${loc.country_name || "不明"} / ${loc.city || "不明"} 付近`;
             } catch (e) {
                 locEl.innerText = "取得制限またはエラー";
             }
@@ -291,10 +292,12 @@
                 <p style="line-height: 2.2;">
                     ステータス: <span style="color:#00ff00;">● ONLINE</span><br>
                     最終受信: <span id="last_rx" style="color:var(--accent-blue);">----/--/-- --:--:--</span><br>
+                    更新速度: <span style="color:var(--accent-blue);">30秒/サイクル</span><br>
                     IPアドレス: <span id="dev_ip" style="color:var(--accent-blue); font-family:'Orbitron';">----</span><br>
-                    推定現在地: <span id="dev_loc" style="color:var(--accent-green);">取得中...</span>
+                    地域: <span id="dev_loc" style="color:var(--accent-green);">取得中...</span><br>
+                    ストレージ: <span style="color:var(--accent-green);">クラウド自動ローテート方式</span>
                 </p>
-                <p style="font-size:10px; opacity:0.6; margin-top:15px;">※IPアドレスはM5Stackから送信されたログを参照しています。現在地はIPに基づく推測であり誤差があります。</p>
+                <p style="font-size:10px; opacity:0.6; margin-top:15px;">※IPアドレスはM5Stackから送信されたログを参照しています。現在地はIPに基づく推測であり、プロバイダの経由地によって誤差が生じます。</p>
             </div>
         </div>
     </div>
